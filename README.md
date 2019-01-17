@@ -5,7 +5,7 @@ Helper Class for OpenVINO Python - tested on 2018R5
 This is an attempt to make it easier to run inferences using OpenVINO in Python
 
 ## Directory Structure:
-Download the folder, rename it to utils, then place it in the same folder as your python script. Place models inside the models subdirectory. See example below:
+Download and place the utils folder inside the same folder as your python script. Place models inside the models subdirectory. Your directory structure should look like:
 ```
 yourscript.py
 |- utils
@@ -46,7 +46,7 @@ prediction.shape should match the documentation for the output of the respective
 Create your own methods/functions to parse the output.
 
 
-Use with caution. Do note that this code may no longer work when Intel updates the Python API. 
+Use with caution. Do note that this code may no longer work when Intel updates the Python API. <br />
 https://software.intel.com/en-us/articles/OpenVINO-InferEngine#overview-of-inference-engine-python-api
 
 According to the site as at 1 January 2019, "This is a preview version of the Inference Engine Python* API for evaluation purpose only. Module structure and API itself will be changed in future releases."
