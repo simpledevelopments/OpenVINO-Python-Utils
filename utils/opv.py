@@ -1,12 +1,12 @@
 # https://github.com/simpledevelopments/OpenVINO-Python-Utils
 #
-# OpvModel
+# OpvModel v1.2 (Supports multiple ncs devices. Use a different ncs number for each device when creating object OpvModel)
 # - name
 # - input_layer
 # - input_shape
 # - output_layer
-# - preprocess(bgr_image)   
-# - predict(bgr_image)      returns list of results
+# - Preprocess(bgr_image)   
+# - Predict(bgr_image)      returns list of results
 # - lastresult [if prediction has been made]
 # - labels     [if labels are available]
 # - ClearMachine()
@@ -19,35 +19,35 @@ from openvino.inference_engine import IENetwork, IEPlugin
 import os
 
 class OpvExec:
-    __machine = None
-    __counter = 0
-    def __init__(self):
-        pass
-    def _IncCount(self):
-        self.__class__.__counter +=1
-    def _GetCount(self):
-        return self.__class__.__counter
+    __machine = []
+    __machine_ids = []
+    def __init__(self, machine_id=0):
+        self._machine_id = machine_id
+        if (not machine_id in self.__class__.__machine_ids):       #Create if it does not exist
+            self.__class__.__machine_ids.append(machine_id)
+            self.__class__.__machine.append(None)
     def _HasValidMachine(self):
-        return (self.__class__.__machine != None)
+        return (self._machine_id in self.__class__.__machine_ids) and self.__class__.__machine [self.__class__.__machine_ids.index(self._machine_id)] is not None
     def _SetMachine(self, machine):
-        self.__class__.__machine = machine
+        self.__class__.__machine[self.__class__.__machine_ids.index(self._machine_id)] = machine
     def _GetMachine(self):
-        assert(self.__class__.__machine is not None),"Please check that a valid model has been loaded"
-        return self.__class__.__machine
-
+        if (self._machine_id in self.__class__.__machine_ids):
+            assert (self.__class__.__machine [self.__class__.__machine_ids.index(self._machine_id)] is not None), "Please check that a valid model has been loaded"
+            return self.__class__.__machine [self.__class__.__machine_ids.index(self._machine_id)]
+    
     #For releasing loaded graph on the device (e.g. NCS2) 
     def ClearMachine(self):                 
-        tmp = self.__class__.__machine
-        self.__class__.__machine = None
+        tmp = self.__class__.__machine[self.__class__.__machine_ids.index(self._machine_id)]
+        self.__class__.__machine[self.__class__.__machine_ids.index(self._machine_id)] = None
         del tmp        
     
 class OpvModel(OpvExec):
-    def __init__(self, model_name, device, fp="FP32", debug=False):
-        OpvExec.__init__(self)
+    def __init__(self, model_name, device, fp="FP32", debug=False, ncs=1):
+        OpvExec.__init__(self, ncs)
         assert(fp in ('FP16','FP32'))
         self.name = model_name
         self._debug = debug
-        if (self._GetCount()>0):
+        if (self._HasValidMachine()):
             self.ClearMachine()
             if (self._debug == True):
                 print("Loaded Machine Released")
@@ -78,11 +78,10 @@ class OpvModel(OpvExec):
         self.output_layer = next(iter(net.outputs))
         
         self._SetMachine(plugin.load(network=net))
-        self._IncCount()
         del net
         del plugin
         if (self._debug):
-            print("[INFO] Model " + model_name + " Loaded and Ready")
+            print("[INFO] Model " + model_name + " Loaded and Ready on NCS device "+str(ncs))
 
     def Preprocess(self, image):                              # Preprocess the image
         original = image.copy()
